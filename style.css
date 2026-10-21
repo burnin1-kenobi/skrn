@@ -1,0 +1,115 @@
+/* SKRN: estilo comum do transmissor e da Activity.
+   Cores por tema (data-tema no <html>): skrn (padrão), discord e perfil (cor do perfil do Discord). */
+
+@font-face { font-family: 'Inter'; font-weight: 400; font-display: swap; src: url(fonts/inter-400.woff2) format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 500; font-display: swap; src: url(fonts/inter-500.woff2) format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 700; font-display: swap; src: url(fonts/inter-700.woff2) format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 400; font-display: swap; src: url(fonts/jetbrains-mono-400.woff2) format('woff2'); }
+@font-face { font-family: 'Bebas Neue'; font-weight: 400; font-display: swap; src: url(fonts/bebas-neue-400.woff2) format('woff2'); }
+
+:root, [data-tema="skrn"] {
+  --fundo: #0A0F1E;
+  --painel: color-mix(in srgb, #2D1B69 55%, #0A0F1E);
+  --borda: color-mix(in srgb, #6C63FF 28%, transparent);
+  --texto: #F3F4F6;
+  --suave: #9CA3AF;
+  --destaque: #6C63FF;
+  --vivo: #00F5D4;
+  --parar: #FF4D8D;
+  --aviso: #FEE440;
+  --ok: #00F5D4;
+  --logo-1: #00F5D4;
+  --logo-2: #FF4D8D;
+  --botao-principal: linear-gradient(135deg, #6C63FF, #00F5D4);
+  --texto-principal: #0A0F1E;
+  color-scheme: dark;
+}
+[data-tema="discord"] {
+  --fundo: #1e1f22;
+  --painel: #2b2d31;
+  --borda: #3a3c42;
+  --texto: #f2f3f5;
+  --suave: #b5bac1;
+  --destaque: #5865f2;
+  --vivo: #23a55a;
+  --parar: #f23f43;
+  --aviso: #f0b232;
+  --ok: #23a55a;
+  --logo-1: #ffffff;
+  --logo-2: #5865f2;
+  --botao-principal: #5865f2;
+  --texto-principal: #ffffff;
+}
+/* Perfil: o SKRN com a cor de destaque do perfil da pessoa (--cor-perfil, posta pelo JS). */
+[data-tema="perfil"] {
+  --destaque: var(--cor-perfil, #6C63FF);
+  --borda: color-mix(in srgb, var(--cor-perfil, #6C63FF) 30%, transparent);
+  --painel: color-mix(in srgb, var(--cor-perfil, #2D1B69) 18%, #0A0F1E);
+  --logo-2: var(--cor-perfil, #FF4D8D);
+  --botao-principal: linear-gradient(135deg, var(--cor-perfil, #6C63FF), #00F5D4);
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  font: 14px/1.45 Inter, system-ui, 'Segoe UI', sans-serif;
+}
+h1 { font-size: 18px; margin: 0 0 4px; }
+.suave { color: var(--suave); }
+.mono, .stats { font-family: 'JetBrains Mono', ui-monospace, Consolas, monospace; }
+.stats { font-size: 12px; line-height: 1.4; color: var(--suave); }
+.icone { flex: none; vertical-align: middle; }
+
+/* Logotipo: SKRN alto e estreito, K e N na segunda cor (como o ícone). */
+.logo {
+  font: 400 26px/1 'Bebas Neue', Inter, sans-serif; letter-spacing: .06em;
+  color: var(--logo-1); display: inline-block; transform: scaleY(1.15);
+}
+.logo b { font-weight: 400; color: var(--logo-2); }
+
+button, select, input {
+  font: inherit;
+  color: var(--texto);
+  background: var(--painel);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+button { cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+button:hover:not(:disabled) { border-color: var(--destaque); }
+button.primario { background: var(--botao-principal); color: var(--texto-principal); border: 0; font-weight: 700; }
+button.perigo { background: var(--parar); color: #fff; border-color: var(--parar); font-weight: 700; }
+button.icone-so { padding: 6px; background: transparent; border-color: transparent; color: var(--suave); }
+button.icone-so:hover { color: var(--texto); border-color: var(--borda); }
+button:disabled { opacity: .35; cursor: not-allowed; }
+
+/* "Ao vivo": ponto pulsando. */
+.selo-vivo {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--vivo); font-weight: 700; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+}
+.selo-vivo::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--vivo);
+  animation: pulso 1.6s ease-in-out infinite;
+}
+@keyframes pulso { 50% { opacity: .3; } }
+
+/* Foto de perfil (ou iniciais quando não tem). */
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex: none; object-fit: cover;
+  border: 2px solid var(--destaque); background: var(--painel);
+  display: inline-grid; place-items: center; font-size: 13px; font-weight: 500;
+}
+.avatar.pequeno { width: 24px; height: 24px; font-size: 10px; border-width: 1.5px; }
+/* Tag de servidor do Discord (a plaquinha ao lado do nome). */
+.tag {
+  display: inline-flex; align-items: center; gap: 3px; vertical-align: 1px;
+  font-size: 11px; font-weight: 500; line-height: 16px; padding: 0 6px; border-radius: 999px;
+  border: 1px solid var(--destaque); color: var(--texto);
+}
+.tag img { width: 12px; height: 12px; }
+
+@media (prefers-reduced-motion: reduce) { .selo-vivo::before { animation: none; } }

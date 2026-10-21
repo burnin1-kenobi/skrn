@@ -1,0 +1,13 @@
+/* Páginas de texto (termos e privacidade): leitura confortável no tema do SKRN. */
+.documento { max-width: 780px; margin: 0 auto; padding: 32px 20px 64px; font-size: 16px; line-height: 1.65; }
+.documento header { margin-bottom: 28px; border-bottom: 1px solid var(--borda); padding-bottom: 20px; }
+.documento .logo { font-size: 40px; }
+.documento h1 { font-size: 28px; margin: 10px 0 4px; }
+.documento h2 { font-size: 18px; margin: 32px 0 8px; }
+.documento a { color: var(--vivo); }
+.documento li { margin: 4px 0; }
+.documento code { font-family: 'JetBrains Mono', monospace; font-size: 14px; background: var(--painel); padding: 1px 6px; border-radius: 4px; }
+.documento table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0; }
+.documento th, .documento td { text-align: left; vertical-align: top; padding: 8px 10px; border: 1px solid var(--borda); }
+.documento th { background: var(--painel); }
+@media (max-width: 600px) { .documento table { display: block; overflow-x: auto; } }
