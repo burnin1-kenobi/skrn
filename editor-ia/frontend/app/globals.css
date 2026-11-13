@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/* Paleta do editor: escuro neutro, para não interferir na leitura das cores da foto */
+@theme {
+  --color-canvas: #0b0c0f;
+  --color-panel: #131519;
+  --color-panel-2: #1a1d23;
+  --color-line: #262a32;
+  --color-ink: #eceef2;
+  --color-ink-soft: #9aa1ad;
+  --color-ink-faint: #6b7280;
+  --color-accent: #8ea2ff;
+  --color-accent-strong: #6d84ff;
+  --color-ok: #4ade80;
+  --color-warn: #fbbf24;
+  --color-danger: #f87171;
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Fundo quadriculado para mostrar transparência */
+.checker {
+  background-color: #2a2d34;
+  background-image:
+    linear-gradient(45deg, #353841 25%, transparent 25%),
+    linear-gradient(-45deg, #353841 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #353841 75%),
+    linear-gradient(-45deg, transparent 75%, #353841 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+input[type="range"] {
+  accent-color: var(--color-accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
