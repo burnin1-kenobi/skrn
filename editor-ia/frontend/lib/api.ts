@@ -12,6 +12,7 @@ export type ParamSpec = {
   step?: number;
   options?: { value: string; label: string }[];
   help?: string;
+  group?: string;
 };
 
 export type OperationInfo = {

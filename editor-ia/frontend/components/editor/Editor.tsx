@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { Collapsible } from "@/components/ui/Collapsible";
+import { Icon, OPERATION_ICONS } from "@/components/ui/Icon";
+import { Logo } from "@/components/ui/Logo";
 import { Notice } from "@/components/ui/Notice";
 import { useHistory } from "@/hooks/useHistory";
 import {
@@ -16,6 +19,9 @@ import {
   type Step,
   type Version,
 } from "@/lib/api";
+import { PRESET_GROUPS, type Preset } from "@/lib/presets";
+import { Filmstrip } from "./Filmstrip";
+import { Histogram } from "./Histogram";
 import { ParamControl } from "./ParamControl";
 import { VersionsPanel } from "./VersionsPanel";
 import { Viewport, type CompareMode, type Rect, type ViewportHandle } from "./Viewport";
@@ -69,6 +75,7 @@ export function Editor({ imageId }: { imageId: string }) {
   const [compare, setCompare] = useState<CompareMode>("off");
   const [zoom, setZoom] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState<"edit" | "versions">("edit");
   const viewport = useRef<ViewportHandle>(null);
   const previewUrl = useObjectUrl();
   const originalUrl = useObjectUrl();
@@ -165,6 +172,11 @@ export function Editor({ imageId }: { imageId: string }) {
     setToolId(id);
     resetDraft(op);
     setRegionOn(false);
+  };
+
+  const applyPreset = (preset: Preset) => {
+    const base = apply() ?? steps;
+    history.push([...base, ...preset.steps.map((st) => ({ ...st, params: { ...st.params } }))]);
   };
 
   const removeStep = (index: number) => history.push(steps.filter((_, i) => i !== index));
@@ -285,201 +297,305 @@ export function Editor({ imageId }: { imageId: string }) {
     );
   }
 
-  const categories = catalog ? Array.from(new Set(catalog.map((o) => o.category))) : [];
+  // Agrupa os parâmetros da ferramenta em seções (ex.: Luz, Cor)
+  const paramGroups = tool
+    ? tool.params.reduce<{ name: string; params: typeof tool.params }[]>((acc, p) => {
+        const name = p.group ?? "Ajustes";
+        const g = acc.find((x) => x.name === name);
+        if (g) g.params.push(p);
+        else acc.push({ name, params: [p] });
+        return acc;
+      }, [])
+    : [];
+  const iconBtn = "flex h-9 w-9 items-center justify-center rounded-xl text-ink-soft transition-colors hover:bg-panel-2 hover:text-ink disabled:opacity-35 disabled:hover:bg-transparent";
 
   return (
-    // Altura fixa da janela (menos o cabeçalho de 3rem): cada coluna rola por conta própria
-    <div className="flex h-[calc(100dvh-3rem)] min-h-0 overflow-hidden">
-      {/* Ferramentas */}
-      <aside className="flex w-52 shrink-0 flex-col gap-4 overflow-y-auto border-r border-line bg-panel p-3">
-        <Link href="/" className="text-xs text-ink-soft hover:text-ink">
-          ← Galeria
+    <div className="flex h-dvh min-h-0 flex-col gap-3 p-3">
+      {/* Barra superior */}
+      <header className="card flex h-14 shrink-0 items-center gap-2 px-3">
+        <Link href="/" className="flex items-center gap-2 rounded-xl pr-2 hover:bg-panel-2" title="Voltar para a galeria">
+          <Logo compact />
+          <Icon name="back" size={16} className="text-ink-faint" />
         </Link>
-        {image && (
-          <div className="text-xs">
-            <p className="truncate font-medium" title={image.original_name}>
-              {image.original_name}
-            </p>
-            <p className="text-ink-faint">
-              {image.width}×{image.height} · {image.format}
-            </p>
-          </div>
-        )}
-        {categories.map((cat) => (
-          <div key={cat}>
-            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-ink-faint">{cat}</p>
-            <div className="space-y-0.5">
-              {catalog!
-                .filter((o) => o.category === cat)
-                .map((o) => (
-                  <button
-                    key={o.id}
-                    type="button"
-                    onClick={() => selectTool(o.id)}
-                    title={o.description}
-                    className={`w-full rounded-md px-2 py-1.5 text-left text-sm ${
-                      o.id === toolId ? "bg-accent/15 text-ink" : "text-ink-soft hover:bg-panel-2 hover:text-ink"
-                    }`}
-                  >
-                    {o.name}
-                  </button>
-                ))}
-            </div>
-          </div>
-        ))}
-        <div className="mt-auto space-y-1 text-[11px] leading-snug text-ink-faint">
-          <p>Roda do mouse: zoom</p>
-          <p>Arrastar: mover · Espaço + arrastar ao selecionar</p>
-          <p>Ctrl+Z / Ctrl+Y: desfazer / refazer</p>
-          <p>Segure \ para ver o original</p>
-        </div>
-      </aside>
-
-      {/* Área central */}
-      <section className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-11 shrink-0 items-center gap-1 border-b border-line bg-panel px-2">
-          <Button variant="ghost" onClick={undo} disabled={!history.canUndo} title="Desfazer (Ctrl+Z)">
-            ↶ Desfazer
-          </Button>
-          <Button variant="ghost" onClick={redo} disabled={!history.canRedo} title="Refazer (Ctrl+Y)">
-            ↷ Refazer
-          </Button>
-          <span className="mx-2 h-5 w-px bg-line" />
-          <Button variant="ghost" onClick={() => viewport.current?.zoomOut()} aria-label="Diminuir zoom">
-            −
-          </Button>
-          <span className="w-12 text-center font-mono text-xs tabular-nums text-ink-soft">{Math.round(zoom * 100)}%</span>
-          <Button variant="ghost" onClick={() => viewport.current?.zoomIn()} aria-label="Aumentar zoom">
-            +
-          </Button>
-          <Button variant="ghost" onClick={() => viewport.current?.fit()}>
-            Ajustar
-          </Button>
-          <Button variant="ghost" onClick={() => viewport.current?.actualSize()} title="Pixel a pixel da prévia">
-            100%
-          </Button>
-          <span className="mx-2 h-5 w-px bg-line" />
-          <Button
-            variant="ghost"
-            className={compare === "split" ? "!bg-accent/15 !text-ink" : ""}
+        <span className="mx-1 h-6 w-px bg-line" />
+        <nav aria-label="Ferramentas" className="flex items-center gap-1">
+          {catalog?.map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => selectTool(o.id)}
+              title={`${o.name} — ${o.description}`}
+              aria-label={o.name}
+              aria-pressed={o.id === toolId}
+              className={`relative flex h-10 items-center gap-2 rounded-xl px-3 text-sm transition-colors ${
+                o.id === toolId ? "bg-accent/15 text-ink" : "text-ink-soft hover:bg-panel-2 hover:text-ink"
+              }`}
+            >
+              <Icon name={OPERATION_ICONS[o.id] ?? "sparkle"} size={17} />
+              <span className="hidden xl:inline">{o.name}</span>
+              {o.id === toolId && <span className="bg-brand absolute inset-x-3 -bottom-[9px] h-0.5 rounded-full" />}
+            </button>
+          ))}
+        </nav>
+        <div className="ml-auto flex items-center gap-1">
+          <button type="button" className={iconBtn} onClick={undo} disabled={!history.canUndo} title="Desfazer (Ctrl+Z)" aria-label="Desfazer">
+            <Icon name="undo" />
+          </button>
+          <button type="button" className={iconBtn} onClick={redo} disabled={!history.canRedo} title="Refazer (Ctrl+Y)" aria-label="Refazer">
+            <Icon name="redo" />
+          </button>
+          <span className="mx-1 h-6 w-px bg-line" />
+          <button
+            type="button"
+            className={`${iconBtn} ${compare === "split" ? "!bg-accent/15 !text-ink" : ""}`}
             disabled={!splitAllowed}
-            title={splitAllowed ? "Comparar antes e depois lado a lado" : "Indisponível com recorte ou giro aplicados"}
             onClick={() => setCompare((c) => (c === "split" ? "off" : "split"))}
+            title={splitAllowed ? "Antes | Depois" : "Comparação lado a lado indisponível com recorte ou giro"}
+            aria-label="Antes e depois"
+            aria-pressed={compare === "split"}
           >
-            Antes | Depois
-          </Button>
-          <Button
-            variant="ghost"
+            <Icon name="compare" />
+          </button>
+          <button
+            type="button"
+            className={iconBtn}
             onPointerDown={() => setCompare("hold")}
             onPointerUp={() => setCompare("off")}
             onPointerLeave={() => setCompare((c) => (c === "hold" ? "off" : c))}
-            title="Segure para ver o original"
+            title="Segure para ver o original (ou segure a tecla \)"
+            aria-label="Ver original"
           >
-            Ver original
+            <Icon name="eye" />
+          </button>
+          <Button variant="primary" className="ml-2 !rounded-full !px-5" onClick={save} disabled={saving || (!steps.length && !hasPending)}>
+            {saving ? "Salvando…" : "Salvar versão"}
           </Button>
-          <div className="ml-auto flex items-center gap-2">
-            <Button variant="primary" onClick={save} disabled={saving || (!steps.length && !hasPending)}>
-              {saving ? "Salvando…" : "Salvar versão"}
-            </Button>
-          </div>
         </div>
-        {error && (
-          <div className="border-b border-line p-2">
-            <Notice>{error}</Notice>
+      </header>
+
+      <div className="flex min-h-0 flex-1 gap-3">
+        {/* Presets e histórico */}
+        <aside className="card scroll-thin hidden w-60 shrink-0 flex-col overflow-y-auto px-4 py-3 lg:flex">
+          <div className="flex items-center justify-between pb-1 pt-1">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <Icon name="sparkle" size={16} className="text-accent" /> Presets
+            </h2>
           </div>
-        )}
-        <div className="min-h-0 flex-1">
-          <Viewport
-            ref={viewport}
-            src={preview?.url ?? null}
-            compareSrc={original}
-            compareMode={compare === "split" && !splitAllowed ? "off" : compare}
-            width={preview?.width ?? 0}
-            height={preview?.height ?? 0}
-            drawMode={drawMode}
-            overlay={overlay}
-            aspect={aspect}
-            loading={loading || !preview}
-            onDraw={onDraw}
-            onZoomChange={setZoom}
-          />
-        </div>
-      </section>
-
-      {/* Painel da direita */}
-      <aside className="flex w-80 shrink-0 flex-col overflow-y-auto border-l border-line bg-panel">
-        {tool && (
-          <section className="border-b border-line p-4">
-            <h2 className="text-sm font-semibold">{tool.name}</h2>
-            <p className="mb-3 text-xs text-ink-faint">{tool.description}</p>
-
-            {tool.ui === "crop" ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-1">
-                  {CROP_ASPECTS.map((a) => (
-                    <button
-                      key={a.label}
-                      type="button"
-                      onClick={() => {
-                        setCropAspect(a.value);
-                        setCrop(null);
-                      }}
-                      className={`rounded-md border px-1 py-1 text-xs ${
-                        cropAspect === a.value ? "border-accent bg-accent/15" : "border-line text-ink-soft hover:border-ink-faint"
-                      }`}
-                    >
-                      {a.label}
+          {PRESET_GROUPS.map((g, gi) => (
+            <Collapsible key={g.name} title={g.name} defaultOpen={gi === 0}>
+              <ul className="space-y-0.5">
+                {g.presets.map((p) => (
+                  <li key={p.id}>
+                    <button type="button" onClick={() => applyPreset(p)} className="w-full rounded-lg px-2 py-1.5 text-left text-sm text-ink-soft hover:bg-panel-2 hover:text-ink">
+                      {p.name}
                     </button>
-                  ))}
-                </div>
-                <p className="text-xs text-ink-soft">
-                  {crop ? "Arraste de novo para refazer a área." : "Arraste sobre a imagem para marcar a área que fica."}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {tool.params.map((p) => (
-                  <ParamControl key={p.id} spec={p} value={draft[p.id] ?? p.default} onChange={(v) => setDraft((d) => ({ ...d, [p.id]: v }))} />
+                  </li>
                 ))}
+              </ul>
+            </Collapsible>
+          ))}
+
+          <div className="mt-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-sm font-semibold">
+              <Icon name="history" size={16} className="text-accent" /> Edições aplicadas
+            </h2>
+            {steps.length > 0 && (
+              <button type="button" className="text-xs text-ink-faint hover:text-ink" onClick={() => history.push([])}>
+                Limpar
+              </button>
+            )}
+          </div>
+          {steps.length === 0 ? (
+            <p className="mt-2 text-xs text-ink-faint">Nada aplicado. A imagem está igual ao original.</p>
+          ) : (
+            <ol className="mt-2 space-y-1">
+              {steps.map((s, i) => {
+                const op = byId.get(s.op);
+                const changed = op ? op.params.filter((p) => s.params[p.id] !== undefined && s.params[p.id] !== p.default).length : 0;
+                return (
+                  <li key={i} className="group flex items-center gap-2 rounded-lg bg-panel-2 px-2 py-1.5 text-xs">
+                    <Icon name={OPERATION_ICONS[s.op] ?? "sparkle"} size={14} className="shrink-0 text-ink-faint" />
+                    <span className="min-w-0 flex-1 truncate">
+                      {op?.name ?? s.op}
+                      <span className="text-ink-faint">
+                        {s.op !== "crop" && changed ? ` · ${changed}` : ""}
+                        {s.region ? " · área" : ""}
+                      </span>
+                    </span>
+                    <button type="button" className="text-ink-faint opacity-60 hover:text-danger group-hover:opacity-100" onClick={() => removeStep(i)} aria-label={`Remover edição ${i + 1}`}>
+                      <Icon name="x" size={14} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </aside>
+
+        {/* Imagem + faixa de fotos */}
+        <section className="flex min-w-0 flex-1 flex-col gap-3">
+          <div className="card relative min-h-0 flex-1 overflow-hidden">
+            <Viewport
+              ref={viewport}
+              src={preview?.url ?? null}
+              compareSrc={original}
+              compareMode={compare === "split" && !splitAllowed ? "off" : compare}
+              width={preview?.width ?? 0}
+              height={preview?.height ?? 0}
+              drawMode={drawMode}
+              overlay={overlay}
+              aspect={aspect}
+              loading={loading || !preview}
+              onDraw={onDraw}
+              onZoomChange={setZoom}
+            />
+            {error && (
+              <div className="absolute inset-x-3 top-3">
+                <Notice>{error}</Notice>
               </div>
             )}
+            <div className="absolute bottom-3 right-3 flex items-center gap-0.5 rounded-full border border-line bg-panel/90 px-1 py-0.5 text-xs backdrop-blur">
+              <button type="button" className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-panel-3" onClick={() => viewport.current?.zoomOut()} aria-label="Diminuir zoom">
+                <Icon name="minus" size={14} />
+              </button>
+              <button type="button" className="w-12 font-mono tabular-nums text-ink-soft hover:text-ink" onClick={() => viewport.current?.actualSize()} title="Pixel a pixel da prévia">
+                {Math.round(zoom * 100)}%
+              </button>
+              <button type="button" className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-panel-3" onClick={() => viewport.current?.zoomIn()} aria-label="Aumentar zoom">
+                <Icon name="plus" size={14} />
+              </button>
+              <button type="button" className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-panel-3" onClick={() => viewport.current?.fit()} aria-label="Ajustar à tela" title="Ajustar à tela">
+                <Icon name="fit" size={14} />
+              </button>
+            </div>
+            <p className="pointer-events-none absolute bottom-4 left-4 hidden text-[11px] text-ink-faint 2xl:block">
+              Roda: zoom · Arrastar: mover · Espaço+arrastar ao selecionar · Ctrl+Z/Y · segure \ para o original
+            </p>
+          </div>
+          <div className="card shrink-0">
+            <Filmstrip currentId={imageId} onError={setError} />
+          </div>
+        </section>
 
-            {tool.supports_region && (
-              <div className="mt-4 rounded-lg border border-line p-3">
-                <label className="flex cursor-pointer items-center justify-between text-sm">
-                  <span>Aplicar só numa área</span>
-                  <input type="checkbox" checked={regionOn} onChange={(e) => setRegionOn(e.target.checked)} className="h-4 w-4 accent-[var(--color-accent)]" />
-                </label>
-                {regionOn && (
-                  <div className="mt-2 space-y-2 text-xs">
-                    <div className="grid grid-cols-2 gap-1">
-                      {(["ellipse", "rect"] as const).map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => setRegionShape(s)}
-                          className={`rounded-md border py-1 ${regionShape === s ? "border-accent bg-accent/15" : "border-line text-ink-soft"}`}
-                        >
-                          {s === "ellipse" ? "Elipse" : "Retângulo"}
-                        </button>
-                      ))}
+        {/* Painel de ajustes */}
+        <aside className="card flex w-80 shrink-0 flex-col overflow-hidden">
+          <div className="p-3 pb-0">
+            <div role="tablist" className="grid grid-cols-2 gap-1 rounded-xl bg-panel-2 p-1 text-sm">
+              {(
+                [
+                  ["edit", "Editar"],
+                  ["versions", `Versões${image?.versions.length ? ` (${image.versions.length})` : ""}`],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === id}
+                  onClick={() => setTab(id)}
+                  className={`rounded-lg py-1.5 font-medium transition-colors ${tab === id ? "bg-brand text-white shadow" : "text-ink-soft hover:text-ink"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="scroll-thin min-h-0 flex-1 overflow-y-auto px-4 py-3">
+            {tab === "versions" ? (
+              <VersionsPanel versions={image?.versions ?? []} activeId={parentId} onOpen={openVersion} onDelete={deleteVersion} />
+            ) : (
+              <>
+                <Histogram src={preview?.url ?? null} />
+                {image && (
+                  <p className="mt-1.5 flex justify-between text-[11px] text-ink-faint">
+                    <span className="truncate pr-2">{image.original_name}</span>
+                    <span>{image.width}×{image.height}</span>
+                  </p>
+                )}
+
+                {tool && (
+                  <div className="mt-4">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/15 text-accent">
+                        <Icon name={OPERATION_ICONS[tool.id] ?? "sparkle"} size={18} />
+                      </span>
+                      <div>
+                        <h2 className="text-sm font-semibold">{tool.name}</h2>
+                        <p className="text-xs leading-snug text-ink-faint">{tool.description}</p>
+                      </div>
                     </div>
-                    <ParamControl
-                      spec={{ id: "feather", label: "Suavizar borda", type: "float", default: 0.35, min: 0, max: 1, step: 0.01 }}
-                      value={regionFeather}
-                      onChange={(v) => setRegionFeather(Number(v))}
-                    />
-                    <label className="flex items-center justify-between">
-                      <span>Inverter (tudo menos a área)</span>
-                      <input type="checkbox" checked={regionInvert} onChange={(e) => setRegionInvert(e.target.checked)} className="accent-[var(--color-accent)]" />
-                    </label>
-                    <p className="text-ink-soft">{region ? "Arraste de novo para mudar a área." : "Arraste sobre a imagem para marcar a área."}</p>
+
+                    {tool.ui === "crop" ? (
+                      <div className="mt-4 space-y-3">
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {CROP_ASPECTS.map((a) => (
+                            <button
+                              key={a.label}
+                              type="button"
+                              onClick={() => {
+                                setCropAspect(a.value);
+                                setCrop(null);
+                              }}
+                              className={`rounded-lg border px-1 py-1.5 text-xs ${cropAspect === a.value ? "border-accent bg-accent/15" : "border-line text-ink-soft hover:border-ink-faint"}`}
+                            >
+                              {a.label}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-ink-soft">{crop ? "Arraste de novo para refazer a área." : "Arraste sobre a imagem para marcar a área que fica."}</p>
+                      </div>
+                    ) : (
+                      <div className="mt-2">
+                        {paramGroups.map((g) => (
+                          <Collapsible key={g.name} title={g.name}>
+                            <div className="space-y-1">
+                              {g.params.map((p) => (
+                                <ParamControl key={p.id} spec={p} value={draft[p.id] ?? p.default} onChange={(v) => setDraft((d) => ({ ...d, [p.id]: v }))} />
+                              ))}
+                            </div>
+                          </Collapsible>
+                        ))}
+                      </div>
+                    )}
+
+                    {tool.supports_region && (
+                      <div className="mt-3 rounded-2xl border border-line bg-panel-2/60 p-3">
+                        <label className="flex cursor-pointer items-center justify-between text-sm">
+                          <span>Aplicar só numa área</span>
+                          <input type="checkbox" checked={regionOn} onChange={(e) => setRegionOn(e.target.checked)} className="h-4 w-4 accent-[var(--color-accent)]" />
+                        </label>
+                        {regionOn && (
+                          <div className="mt-2 space-y-2 text-xs">
+                            <div className="grid grid-cols-2 gap-1">
+                              {(["ellipse", "rect"] as const).map((sh) => (
+                                <button key={sh} type="button" onClick={() => setRegionShape(sh)} className={`rounded-lg border py-1 ${regionShape === sh ? "border-accent bg-accent/15" : "border-line text-ink-soft"}`}>
+                                  {sh === "ellipse" ? "Elipse" : "Retângulo"}
+                                </button>
+                              ))}
+                            </div>
+                            <ParamControl
+                              spec={{ id: "feather", label: "Suavizar borda", type: "float", default: 0.35, min: 0, max: 1, step: 0.01 }}
+                              value={regionFeather}
+                              onChange={(v) => setRegionFeather(Number(v))}
+                            />
+                            <label className="flex items-center justify-between">
+                              <span>Inverter (tudo menos a área)</span>
+                              <input type="checkbox" checked={regionInvert} onChange={(e) => setRegionInvert(e.target.checked)} className="accent-[var(--color-accent)]" />
+                            </label>
+                            <p className="text-ink-soft">{region ? "Arraste de novo para mudar a área." : "Arraste sobre a imagem para marcar a área."}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
+              </>
             )}
+          </div>
 
-            <div className="mt-4 flex gap-2">
+          {tab === "edit" && tool && (
+            <div className="flex gap-2 border-t border-line p-3">
               <Button variant="primary" className="flex-1" onClick={apply} disabled={!hasPending}>
                 Aplicar
               </Button>
@@ -487,49 +603,9 @@ export function Editor({ imageId }: { imageId: string }) {
                 Descartar
               </Button>
             </div>
-          </section>
-        )}
-
-        <section className="border-b border-line p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Edições aplicadas</h2>
-            {steps.length > 0 && (
-              <button type="button" className="text-xs text-ink-soft hover:text-ink" onClick={() => history.push([])}>
-                Limpar tudo
-              </button>
-            )}
-          </div>
-          {steps.length === 0 ? (
-            <p className="text-xs text-ink-faint">Nada aplicado ainda. A imagem está igual ao original.</p>
-          ) : (
-            <ol className="space-y-1">
-              {steps.map((s, i) => {
-                const op = byId.get(s.op);
-                const changed = op ? op.params.filter((p) => s.params[p.id] !== undefined && s.params[p.id] !== p.default).length : 0;
-                return (
-                  <li key={i} className="flex items-center justify-between rounded-md bg-panel-2 px-2 py-1 text-xs">
-                    <span>
-                      <span className="text-ink-faint">{i + 1}.</span> {op?.name ?? s.op}
-                      <span className="text-ink-faint">
-                        {s.op !== "crop" && changed ? ` · ${changed} ajuste(s)` : ""}
-                        {s.region ? " · em área" : ""}
-                      </span>
-                    </span>
-                    <button type="button" className="text-ink-faint hover:text-danger" onClick={() => removeStep(i)} aria-label={`Remover edição ${i + 1}`}>
-                      ✕
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
           )}
-        </section>
-
-        <section className="p-4">
-          <h2 className="mb-2 text-sm font-semibold">Versões salvas</h2>
-          <VersionsPanel versions={image?.versions ?? []} activeId={parentId} onOpen={openVersion} onDelete={deleteVersion} />
-        </section>
-      </aside>
+        </aside>
+      </div>
     </div>
   );
 }

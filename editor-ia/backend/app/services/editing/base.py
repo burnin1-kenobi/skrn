@@ -35,6 +35,7 @@ class ParamSpec:
     step: float | None = None
     options: tuple[tuple[str, str], ...] | None = None  # (valor, rótulo)
     help: str | None = None
+    group: str | None = None  # agrupa controles em seções no painel
 
     def coerce(self, value: Any) -> Any:
         if value is None:

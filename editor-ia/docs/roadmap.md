@@ -2,7 +2,8 @@
 
 ## Fase 1 — Fundação ✅
 Upload, galeria, editor com ajustes, regiões, recorte, rotação, comparação,
-histórico, versões em segundo plano e exportação. Testes automáticos do
+histórico, versões em segundo plano, exportação, presets, histograma e
+faixa de fotos no editor. Testes automáticos do
 backend (34) e teste ponta a ponta no navegador.
 
 ## Fase 2 — Editor mais completo
@@ -27,5 +28,7 @@ conferida, requisitos de VRAM, testes com imagens sintéticas.
 Presets de ajuste, aplicação em lote, atalhos personalizáveis.
 
 ## Fase 5 — Plataforma
-Login, PostgreSQL, armazenamento privado remoto, preparação para
+Tela de login (e-mail e senha; Google/Facebook só se fizer sentido),
+créditos ou assinatura (só depois de medir o custo real por edição),
+PostgreSQL, armazenamento privado remoto, preparação para
 hospedagem. Só depois de validar o uso real.

@@ -35,15 +35,15 @@ class Adjust(Operation):
     description = "Exposição, contraste, saturação e temperatura de cor."
     supports_region = True
     params = (
-        ParamSpec("exposure", "Exposição", "float", 0.0, -2.0, 2.0, 0.05, help="Em pontos (EV)"),
-        ParamSpec("brightness", "Brilho", "float", 0.0, -1.0, 1.0, 0.01),
-        ParamSpec("contrast", "Contraste", "float", 0.0, -1.0, 1.0, 0.01),
-        ParamSpec("highlights", "Altas luzes", "float", 0.0, -1.0, 1.0, 0.01),
-        ParamSpec("shadows", "Sombras", "float", 0.0, -1.0, 1.0, 0.01),
-        ParamSpec("saturation", "Saturação", "float", 0.0, -1.0, 1.0, 0.01),
-        ParamSpec("vibrance", "Vibração", "float", 0.0, -1.0, 1.0, 0.01, help="Satura mais as cores apagadas"),
-        ParamSpec("temperature", "Temperatura", "float", 0.0, -1.0, 1.0, 0.01, help="Frio ↔ quente"),
-        ParamSpec("tint", "Matiz", "float", 0.0, -1.0, 1.0, 0.01, help="Verde ↔ magenta"),
+        ParamSpec("exposure", "Exposição", "float", 0.0, -2.0, 2.0, 0.05, help="Em pontos (EV)", group="Luz"),
+        ParamSpec("brightness", "Brilho", "float", 0.0, -1.0, 1.0, 0.01, group="Luz"),
+        ParamSpec("contrast", "Contraste", "float", 0.0, -1.0, 1.0, 0.01, group="Luz"),
+        ParamSpec("highlights", "Altas luzes", "float", 0.0, -1.0, 1.0, 0.01, group="Luz"),
+        ParamSpec("shadows", "Sombras", "float", 0.0, -1.0, 1.0, 0.01, group="Luz"),
+        ParamSpec("saturation", "Saturação", "float", 0.0, -1.0, 1.0, 0.01, group="Cor"),
+        ParamSpec("vibrance", "Vibração", "float", 0.0, -1.0, 1.0, 0.01, help="Satura mais as cores apagadas", group="Cor"),
+        ParamSpec("temperature", "Temperatura", "float", 0.0, -1.0, 1.0, 0.01, help="Frio ↔ quente", group="Cor"),
+        ParamSpec("tint", "Matiz", "float", 0.0, -1.0, 1.0, 0.01, help="Verde ↔ magenta", group="Cor"),
     )
 
     def apply(self, image: np.ndarray, v: dict[str, Any]) -> np.ndarray:

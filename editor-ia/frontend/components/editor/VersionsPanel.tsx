@@ -37,7 +37,7 @@ export function VersionsPanel({
       <div className="grid grid-cols-3 gap-1.5 text-xs">
         <label className="col-span-1">
           <span className="mb-0.5 block text-ink-faint">Formato</span>
-          <select value={format} onChange={(e) => setFormat(e.target.value as Format)} className="w-full rounded border border-line bg-panel-2 px-1.5 py-1">
+          <select value={format} onChange={(e) => setFormat(e.target.value as Format)} className="w-full rounded-lg border border-line bg-panel-2 px-1.5 py-1">
             <option value="jpeg">JPG</option>
             <option value="png">PNG</option>
             <option value="webp">WEBP</option>
@@ -45,7 +45,7 @@ export function VersionsPanel({
         </label>
         <label>
           <span className="mb-0.5 block text-ink-faint">Qualidade</span>
-          <select value={quality} disabled={format === "png"} onChange={(e) => setQuality(Number(e.target.value))} className="w-full rounded border border-line bg-panel-2 px-1.5 py-1 disabled:opacity-50">
+          <select value={quality} disabled={format === "png"} onChange={(e) => setQuality(Number(e.target.value))} className="w-full rounded-lg border border-line bg-panel-2 px-1.5 py-1 disabled:opacity-50">
             {[100, 95, 92, 85, 75].map((q) => (
               <option key={q} value={q}>
                 {q}
@@ -55,7 +55,7 @@ export function VersionsPanel({
         </label>
         <label>
           <span className="mb-0.5 block text-ink-faint">Tamanho</span>
-          <select value={maxSide} onChange={(e) => setMaxSide(Number(e.target.value))} className="w-full rounded border border-line bg-panel-2 px-1.5 py-1">
+          <select value={maxSide} onChange={(e) => setMaxSide(Number(e.target.value))} className="w-full rounded-lg border border-line bg-panel-2 px-1.5 py-1">
             <option value={0}>Original</option>
             <option value={4096}>4096 px</option>
             <option value={2048}>2048 px</option>
@@ -69,7 +69,7 @@ export function VersionsPanel({
           const s = STATUS[v.status];
           const ready = v.status === "completed";
           return (
-            <li key={v.id} className={`rounded-lg border p-2 ${v.id === activeId ? "border-accent/60 bg-accent/5" : "border-line"}`}>
+            <li key={v.id} className={`rounded-xl border p-2.5 ${v.id === activeId ? "border-accent/60 bg-accent/5" : "border-line"}`}>
               <div className="flex gap-2">
                 <div className="checker h-14 w-14 shrink-0 overflow-hidden rounded">
                   {ready && (
@@ -94,8 +94,8 @@ export function VersionsPanel({
                 <a
                   href={ready ? api.exportUrl(v.id, format, quality, maxSide || undefined) : undefined}
                   aria-disabled={!ready}
-                  className={`inline-flex flex-1 items-center justify-center rounded-md px-2 py-1 text-xs font-medium ${
-                    ready ? "bg-accent-strong text-white hover:bg-accent" : "pointer-events-none bg-panel-2 text-ink-faint"
+                  className={`inline-flex flex-1 items-center justify-center rounded-lg px-2 py-1 text-xs font-medium ${
+                    ready ? "bg-brand text-white hover:brightness-110" : "pointer-events-none bg-panel-2 text-ink-faint"
                   }`}
                 >
                   Exportar

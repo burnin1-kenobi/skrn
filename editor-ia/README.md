@@ -14,7 +14,12 @@ locais (segmentação, inpainting, ComfyUI) sem reescrever o resto.
 - **Upload** por arrastar e soltar ou botão, com validação (JPG, PNG, WEBP;
   até 30 MB e 60 megapixels). A rotação da câmera (EXIF) é respeitada.
 - **Galeria** privada com miniaturas e exclusão (apaga original e versões).
-- **Editor**
+- **Editor** com painéis flutuantes: barra de ferramentas no topo, presets e
+  histórico à esquerda, imagem no centro com faixa das outras fotos embaixo,
+  histograma e ajustes (em seções recolhíveis) à direita.
+  - **Presets**: Realce leve, Vívido, Retrato suave, Pôr do sol, Inverno,
+    Dramático, Desbotado, três de preto e branco e correções rápidas. Viram
+    passos normais no histórico (dá para desfazer ou remover).
   - Luz e cor: exposição, brilho, contraste, altas luzes, sombras,
     saturação, vibração, temperatura e matiz.
   - Nitidez e suavização (reduz ruído preservando bordas).
